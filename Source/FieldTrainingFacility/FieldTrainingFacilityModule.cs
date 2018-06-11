@@ -261,8 +261,16 @@
             int lastLog = 0;
             FlightLog totalLog = crew.careerLog.CreateCopy();
             totalLog.MergeWith(crew.flightLog.CreateCopy());
+
+            int deadFlight = -1;
             foreach (FlightLog.Entry entry in totalLog.Entries)
             {
+                if (entry.flight <= deadFlight) continue;
+                if (entry.type == "Die") deadFlight = entry.flight;
+            }
+            foreach (FlightLog.Entry entry in totalLog.Entries)
+            {
+                if (entry.flight <= deadFlight) continue;
                 if (lastLog < 1 && entry.type == "Training1") lastLog = 1;
                 if (lastLog < 2 && entry.type == "Training2") lastLog = 2;
                 if (lastLog < 3 && entry.type == "Training3") lastLog = 3;
@@ -272,6 +280,7 @@
 
             return lastLog;
         }
+
         private void setCrewTrainingLevel(ProtoCrewMember crew, int level)
         {
             crew.flightLog.AddEntry(new FlightLog.Entry(crew.flightLog.Flight, trainingArr[level], "Kerbin"));
@@ -284,8 +293,22 @@
 
             FlightLog totalLog = crew.careerLog.CreateCopy();
             totalLog.MergeWith(crew.flightLog.CreateCopy());
+
+            int deadFlight = -1;
             foreach (FlightLog.Entry entry in totalLog.Entries)
-                if (entry.type == "TrainingExp") lastExpStr = entry.target;
+            {
+                if (entry.flight <= deadFlight) continue;
+                if (entry.type == "Die") deadFlight = entry.flight;
+            }
+
+            foreach (FlightLog.Entry entry in totalLog.Entries)
+            {
+                if (entry.type == "TrainingExp")
+                {
+                    if (entry.flight <= deadFlight) removeKerbalTrainingExp(crew);
+                    else lastExpStr = entry.target;
+                }
+            }
 
             return double.Parse(lastExpStr);
         }
