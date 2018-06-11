@@ -90,7 +90,6 @@
 
         public void FixedUpdate()
         {
-            print("FixedUpdate(), " + TimeWarp.fixedDeltaTime);
             if (TrainingStatus == true)
             {
                 if (consumeEC(crewCnt, TimeWarp.fixedDeltaTime) == false)
@@ -105,7 +104,6 @@
 
         public override void OnUpdate()
         {
-            print("onUpdate()");
             if (TrainingStatus == true)
             {
                 double nowTime = Planetarium.GetUniversalTime();
@@ -319,7 +317,6 @@
         public bool consumeEC(int numCrew, double elapsed)
         {
             if (CheatOptions.InfiniteElectricity == true) return true;
-            if (elapsed > 300) return true;
 
             double ec = 0;
             int tanks = 0;
