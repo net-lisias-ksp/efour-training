@@ -89,17 +89,7 @@
         {
             ProtoCrewMember crew = crewArr[index];
 
-            int lastLog = 0;
-            FlightLog totalLog = crew.careerLog.CreateCopy();
-            totalLog.MergeWith(crew.flightLog.CreateCopy());
-            foreach(FlightLog.Entry entry in totalLog.Entries)
-            {
-                if (lastLog < 1 && entry.type == "Training1") lastLog = 1;
-                if (lastLog < 2 && entry.type == "Training2") lastLog = 2;
-                if (lastLog < 3 && entry.type == "Training3") lastLog = 3;
-                if (lastLog < 4 && entry.type == "Training4") lastLog = 4;
-                if (lastLog < 5 && entry.type == "Training5") lastLog = 5;
-            }
+            int lastLog = getCrewTrainedLevel(crew);
 
             if (lastLog == 5)
             {
@@ -133,17 +123,7 @@
             foreach (ProtoCrewMember crew in part.protoModuleCrew)
             {
                 if (index >= 8) break;
-                int lastLog = 0;
-                FlightLog totalLog = crew.careerLog.CreateCopy();
-                totalLog.MergeWith(crew.flightLog.CreateCopy());
-                foreach (FlightLog.Entry entry in totalLog.Entries)
-                {
-                    if (lastLog < 1 && entry.type == "Training1") lastLog = 1;
-                    if (lastLog < 2 && entry.type == "Training2") lastLog = 2;
-                    if (lastLog < 3 && entry.type == "Training3") lastLog = 3;
-                    if (lastLog < 4 && entry.type == "Training4") lastLog = 4;
-                    if (lastLog < 5 && entry.type == "Training5") lastLog = 5;
-                }
+                int lastLog = getCrewTrainedLevel(crew);
 
                 crewArr[index] = crew;
                 int SciCost = (int) calculateSciCost(levelUpExpTable[lastLog], crew);
@@ -191,6 +171,31 @@
             foreach (FlightLog.Entry entry in crew.flightLog.Entries.ToArray())
                 if (entry.type == "TrainingExp")
                     crew.flightLog.Entries.Remove(entry);
+        }
+
+        private int getCrewTrainedLevel(ProtoCrewMember crew)
+        {
+            int lastLog = 0;
+            FlightLog totalLog = crew.careerLog.CreateCopy();
+            totalLog.MergeWith(crew.flightLog.CreateCopy());
+
+            int deadFlight = -1;
+            foreach (FlightLog.Entry entry in totalLog.Entries)
+            {
+                if (entry.flight <= deadFlight) continue;
+                if (entry.type == "Die") deadFlight = entry.flight;
+            }
+            foreach (FlightLog.Entry entry in totalLog.Entries)
+            {
+                if (entry.flight <= deadFlight) continue;
+                if (lastLog < 1 && entry.type == "Training1") lastLog = 1;
+                if (lastLog < 2 && entry.type == "Training2") lastLog = 2;
+                if (lastLog < 3 && entry.type == "Training3") lastLog = 3;
+                if (lastLog < 4 && entry.type == "Training4") lastLog = 4;
+                if (lastLog < 5 && entry.type == "Training5") lastLog = 5;
+            }
+
+            return lastLog;
         }
     }
 }
