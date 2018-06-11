@@ -26,7 +26,7 @@
 
         float[] levelUpExpTable = { 2, 6, 8, 16, 32, 0 };
 
-        string[] levelNumber = { "1st", "2nd", "3rd", "4th", "5th", "null" };
+        string[] levelNumber = { "null", "1st", "2nd", "3rd", "4th", "5th" };
 
         ProtoCrewMember[] crewArr = new ProtoCrewMember[8];
         int crewCnt = 0;
