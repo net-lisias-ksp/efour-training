@@ -29,6 +29,7 @@
         string[] levelNumber = { "1st", "2nd", "3rd", "4th", "5th", "null" };
 
         ProtoCrewMember[] crewArr = new ProtoCrewMember[8];
+        int crewCnt = 0;
 
         [KSPField]
         public float TimeFactor = 426 * 6 * 60 * 60; // 1Year = 426day, 1day = 6hour, 1hour = 60minutes, 1min = 60sec
@@ -87,8 +88,24 @@
             if(TrainingStatus == true) Events["ToggleTraining"].guiName = "Stop Training";
         }
 
+        public void FixedUpdate()
+        {
+            print("FixedUpdate(), " + TimeWarp.fixedDeltaTime);
+            if (TrainingStatus == true)
+            {
+                if (consumeEC(crewCnt, TimeWarp.fixedDeltaTime) == false)
+                {
+                    stopTraining();
+                    ScreenMessages.PostScreenMessage("Electric Charge Depleted. Stopping Training.");
+                }
+            }
+
+            base.OnFixedUpdate();
+        }
+
         public override void OnUpdate()
         {
+            print("onUpdate()");
             if (TrainingStatus == true)
             {
                 double nowTime = Planetarium.GetUniversalTime();
@@ -150,11 +167,8 @@
                     index++;
                 }
 
-                if(consumeEC(index, nowTime - LastTimeSigniture) == false)
-                { 
-                    stopTraining();
-                    ScreenMessages.PostScreenMessage("Electric Charge Depleted. Stopping Training.");
-                }
+                // save crew number
+                crewCnt = index;
 
                 // reset unused spaces
                 for (; index < crewArr.Length; index++)
@@ -305,6 +319,7 @@
         public bool consumeEC(int numCrew, double elapsed)
         {
             if (CheatOptions.InfiniteElectricity == true) return true;
+            if (elapsed > 300) return true;
 
             double ec = 0;
             int tanks = 0;
