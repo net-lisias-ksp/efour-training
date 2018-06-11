@@ -38,7 +38,10 @@
         [KSPField]
         public float Landed = 0.25f;
 
-        [KSPField(guiActive = false, guiName = "Sci")]
+        [KSPField]
+        public float TimeFactor = 426 * 6 * 60 * 60; // 1Year = 426day, 1day = 6hour, 1hour = 60minutes, 1min = 60sec
+
+        [KSPField(guiActive = false, guiName = "Science Point")]
         public int SciRemain;
 
         [KSPEvent(guiActive = false, guiName = "Training0")]
@@ -82,15 +85,6 @@
             TrainKerbal(7);
         }
 
-        private float calculateSciCost(float baseValue)
-        {
-            float ret = baseValue * TrainFactor;
-
-            if (this.vessel.mainBody.bodyName == "Kerbin" && this.vessel.LandedOrSplashed) return ret;
-            else if (this.vessel.LandedOrSplashed) return ret * Landed;
-            else return ret * inSpace;
-        }
-
         private void TrainKerbal(int index)
         {
             ProtoCrewMember crew = crewArr[index];
@@ -113,7 +107,7 @@
                 return;
             }
 
-            float SciCost = calculateSciCost(levelUpExpTable[lastLog]);
+            float SciCost = calculateSciCost(levelUpExpTable[lastLog], crew);
             if (ResearchAndDevelopment.Instance.Science < SciCost)
             {
                 ScreenMessages.PostScreenMessage("Insufficient Science Point.\n" + 
@@ -121,6 +115,7 @@
                 return;
             }
             ResearchAndDevelopment.Instance.AddScience(-1 * SciCost, TransactionReasons.CrewRecruited);
+            removeKerbalTrainingExp(crew);
             crew.flightLog.AddEntry(new FlightLog.Entry(crew.flightLog.Flight, trainingArr[lastLog+1], "Kerbin"));
             ScreenMessages.PostScreenMessage(levelNumber[lastLog] + " Training Complete : " + crew.name);
 
@@ -151,7 +146,7 @@
                 }
 
                 crewArr[index] = crew;
-                int SciCost = (int) calculateSciCost(levelUpExpTable[lastLog]);
+                int SciCost = (int) calculateSciCost(levelUpExpTable[lastLog], crew);
 
                 if (lastLog < 5) Events[eventArr[index]].guiName = "[" + lastLog + "->" + (lastLog + 1) + "] " + crew.name + "[" + SciCost + "p]";
                 else Events[eventArr[index]].guiName = "[5]" + crew.name;
@@ -161,6 +156,41 @@
             }
 
             for(; index < eventArr.Length; index++) Events[eventArr[index]].guiActive = false;
+        }
+
+        private int calculateSciCost(float baseValue, ProtoCrewMember crew)
+        {
+            double calculated = baseValue * TrainFactor * (1 - (getKerbalTrainingExp(crew) / (TimeFactor * baseValue / 64)));
+            int ret = 0;
+
+            if (this.vessel.mainBody.bodyName == "Kerbin" && this.vessel.LandedOrSplashed) ret = ((int) (calculated + 0.5));
+            else if (this.vessel.LandedOrSplashed) ret = ((int) (calculated * Landed + 0.5));
+            else ret = ((int)(calculated * inSpace + 0.5));
+
+            if (ret < 1) ret = 1;
+            return ret;
+        }
+
+        private double getKerbalTrainingExp(ProtoCrewMember crew)
+        {
+            string lastExpStr = "0";
+
+            FlightLog totalLog = crew.careerLog.CreateCopy();
+            totalLog.MergeWith(crew.flightLog.CreateCopy());
+            foreach (FlightLog.Entry entry in totalLog.Entries)
+                if (entry.type == "TrainingExp") lastExpStr = entry.target;
+
+            return double.Parse(lastExpStr);
+        }
+
+        private void removeKerbalTrainingExp(ProtoCrewMember crew)
+        {
+            foreach (FlightLog.Entry entry in crew.careerLog.Entries.ToArray())
+                if (entry.type == "TrainingExp")
+                    crew.careerLog.Entries.Remove(entry);
+            foreach (FlightLog.Entry entry in crew.flightLog.Entries.ToArray())
+                if (entry.type == "TrainingExp")
+                    crew.flightLog.Entries.Remove(entry);
         }
     }
 }
